@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Pixel Art Creator</title>
+    <!-- Подключаем Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Добавляем базовые стили */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            margin-top: 50px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        
+        button {
+            display: block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Minecraft Pixel Art Creator</h1>
+        
+        <!-- Главная панель навигации -->
+        <nav class="navbar navbar-light bg-light mb-3">
+            <a class="navbar-brand">Главная</a>
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="#editor">Создать новое произведение</a></li>
+                <li class="nav-item"><a class="nav-link" href="#gallery">Моя галерея</a></li>
+                <li class="nav-item"><a class="nav-link" href="#community">Сообщество</a></li>
+            </ul>
+        </nav>
+    
+        <!-- Основная секция -->
+        <section id="main-section">
+            <canvas id="pixel-canvas" width="500" height="500"></canvas>
+            <br />
+            <button onclick="saveImage()">Сохранить рисунок кота</button>
+        </section>
+        
+        <!-- Галерея -->
+        <section id="gallery">
+            
+            <div id="my-artworks-container"></div>
+        </section>
+        
+        <!-- Профиль пользователя -->
+        <section id="profile">
+            <h2>Ваш профиль</h2>
+            <p><strong>Имя пользователя:МЯЯЯЯУУУУ</strong> <span id="username"></span></p>
+            <p><strong>Количество работ:1</strong> <span id="work-count"></span></p>
+        </section>
+        
+        <!-- Экспорт файла -->
+        <section id="export">
+            <h2>Экспортировать файл</h2>
+            <form>
+                <label for="file-format">Формат файла:</label>
+                <select id="file-format">
+                    <option value="png">PNG</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="svg">SVG</option>
+                </select>
+                
+                <input type="submit" value="Экспортируйте файл" onclick="exportFile()">
+            </form>
+        </section>
+    </div>
+
+    <!-- Подключаем jQuery и Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentColor = '#000'; // Текущий активный цвет
+        let ctx = null; // Контекст canvas'а
+
+        window.onload = () => {
+            // Инициализация контекста canvas'а
+            const canvas = document.querySelector('#pixel-canvas');
+            ctx = canvas.getContext('2d');
+
+            // Рисуем сетку квадратов
+            drawGrid();
+
+            // Устанавливаем слушатель события click для рисования
+            canvas.addEventListener('click', e => {
+                const rect = canvas.getBoundingClientRect(); // Определяем координаты клика относительно canvas'а
+                const x = Math.floor((e.clientX - rect.left) / 10); // Каждое деление сетки имеет ширину 10px
+                const y = Math.floor((e.clientY - rect.top) / 10);
+
+                fillPixel(x, y, currentColor); // Заполняем соответствующий пиксель заданным цветом
+            });
+        };
+
+        // Функция рисования сетки
+        function drawGrid() {
+            const size = 50; // Размер сетки (50х50)
+            const cellSize = 10; // Ширина каждого квадрата
+            ctx.clearRect(0, 0, 500, 500); // Очищаем canvas
+            for(let i = 0; i <= size; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i*cellSize, 0);
+                ctx.lineTo(i*cellSize, size*cellSize);
+                ctx.strokeStyle = "#ccc";
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i*cellSize);
+                ctx.lineTo(size*cellSize, i*cellSize);
+                ctx.stroke();
+            }
+        }
+
+        // Функция заполнения пикселя цветом
+        function fillPixel(x, y, color) {
+            if (ctx && x >= 0 && y >= 0 && x < 50 && y < 50) { // Проверяем пределы
+                ctx.fillStyle = color;
+                ctx.fillRect(x*10, y*10, 10, 10); // Закрашиваем прямоугольник размером 10x10 px
+            }
+        }
+
+        // Сохранение изображения на сервер
+        async function saveImage() {
+            try {
+                const dataURL = canvas.toDataURL('image/png'); // Преобразовываем canvas в base64 картинку
+                await fetch('/api/save-image', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ image: dataURL })
+                });
+                alert('Изображение успешно сохранено!');
+            } catch(e) {
+                alert('Ошибка сохранения изображения.');
+            }
+        }
+
+        // Экспортируем файл
+        function exportFile() {
+            const format = document.getElementById('file-format').value;
+            const dataURL = canvas.toDataURL(`image/${format}`); // Генерируем нужную ссылку на файл
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = `mypixelart.${format}`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
